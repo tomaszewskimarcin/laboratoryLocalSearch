@@ -1,9 +1,18 @@
 package tools;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Solution {
+	
+	private static boolean random = false;
+	private static boolean steepest = false;
+	private static boolean greedy = false;
+	
+	private static Data data;
+	
+	private static int time;
 	
 	public static int[] randomPermutation(int size)
 	{
@@ -34,7 +43,7 @@ public class Solution {
 		
 	}
 	
-	private static double algorithmR(int time, Data data){
+	private static double algorithmLSR(int time, Data data){
 		
 		double minCost = Double.MAX_VALUE;
 		
@@ -58,17 +67,14 @@ public class Solution {
 		
 	}
 
-	private static int[] swap(int[] table,int i,int j){
-		int[] newTable = table;
-		int[] temp = table;
-		
-		newTable[i] = temp[j];
-		newTable[j] = temp[i];
-		
-		return newTable;
-	}
+	public static final int[] swap (int[] a, int i, int j) {
+		  int t = a[i];
+		  a[i] = a[j];
+		  a[j] = t;
+		  return a;
+		}
 	
-	private static double algorithmLS(int time, Data data){
+	private static double algorithmLSS(int time, Data data){
 		
 		double minCost = Double.MAX_VALUE;
 		
@@ -81,19 +87,51 @@ public class Solution {
 			while(System.currentTimeMillis() < end) {
 				for(int i = 0;i<data.getSize();i++){
 					for(int j = 0;j<data.getSize();j++){
-						tmp = swap(tmp,i,j);
-						
-
-						System.out.println();
-						for(int x = 0; x<tmp.length;x++){
-							System.out.print(tmp[x]);
-							break;
-						}
-						double calculated = calculateCost(tmp, data);
+						int[] tab = swap(tmp,i,j);
+						double calculated = calculateCost(tab, data);
 						if(calculated<minCost){
 							minCost = calculated;
-							lepsze = tmp;
-							System.out.println(minCost);
+							lepsze = tab;
+						}
+					}
+				}
+				tmp = lepsze;
+				Thread.sleep(10);
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		
+		return minCost;
+		
+	}
+
+	private static double algorithmLSG(int time, Data data){
+		
+		double minCost = Double.MAX_VALUE;
+		
+		int[] tmp = randomPermutation(data.getSize());
+		minCost = calculateCost(tmp, data);
+		int[] lepsze = new int[data.getSize()];
+		boolean breakerFlag = false;
+		long t= System.currentTimeMillis();
+		long end = t+time*1000;
+		try {
+			while(System.currentTimeMillis() < end) {
+				for(int i = 0;i<data.getSize();i++){
+					for(int j = 0;j<data.getSize();j++){
+						int[] tab = swap(tmp,i,j);
+						double calculated = calculateCost(tab, data);
+						if(calculated<minCost){
+							minCost = calculated;
+							lepsze = tab;
+							breakerFlag = true;
+							break;
+						}
+						if(breakerFlag){
+							break;
 						}
 					}
 				}
@@ -110,15 +148,98 @@ public class Solution {
 		
 	}
 	
+	private static void checkParameters(String[] args){
+		if(args.length>0 && !args[0].equals("")){
+			switch(args[0]){
+			case "-a":
+				random = true;
+				steepest = true;
+				greedy = true;
+				break;
+			case "-r":
+				random = true;
+				break;
+			case "-s":
+				steepest = true;
+				break;
+			case "-g":
+				greedy = true;
+				break;
+			default:
+				System.out.println("Wrong argument 1!\nChoose:\n- '-a' for all algorithms\n- '-r' for random"
+						+ "\n- '-s' for steepest\n- '-g' for greedy");
+				return;
+			}
+		}else{
+			System.out.println("Missing argument 1!\nChoose:\n- '-a' for all algorithms\n- '-r' for random"
+					+ "\n- '-s' for steepest\n- '-g' for greedy");
+			return;
+		}
+		if(args.length>1&&!args[1].equals("")){
+			File f = new File(args[1]);
+			if(f.exists() && !f.isDirectory()) { 
+			    data = new Data(args[1]);
+			}else{
+				System.out.println("Wrong argument 2!\nFile doesn't exist!");
+				random = false;
+				steepest = false;
+				greedy = false;
+				return;
+			}
+		}else{
+			System.out.println("Missing argument 2!\nSpecify path to data file.");
+			random = false;
+			steepest = false;
+			greedy = false;
+			return;
+		}
+		
+		if(args.length>2&&!args[2].equals("")&&isValidSeconds(args[2])){
+			time = Integer.parseInt(args[2]);
+		}else{
+			System.out.println("Missing or wrong argument 3!\nSpecify time limit in seconds.\n"
+					+ "Time limit must be greater than zero");
+			random = false;
+			steepest = false;
+			greedy = false;
+			return;
+		}
+		
+	}
+	
+	private static boolean isValidSeconds( String input ) {
+	    try {
+	        int i = Integer.parseInt( input );
+	        if(i>0){
+	        	return true;
+	        }else{
+	        	return false;
+	        }
+	    }
+	    catch( Exception e ) {
+	        return false;
+	    }
+	}
+	
 	public static void main(String[] args) {
+	
+		checkParameters(args);
 		
-		int time = 60;
-		//int[] opt = {18,14,10,3,9,4,2,12,11,16,19,15,20,8,13,17,5,7,1,6};
-		Data data = new Data("path/nug20.dat");
-		//System.out.println(calculateCost(opt, data));
+		if(random){
+			System.out.println("---WORKING---");
+			System.out.println("Random: "+algorithmLSR(time, data));
+		}
 		
+		if(steepest){
+			System.out.println("---WORKING---");
+			System.out.println("Steepest: "+algorithmLSS(time,data));
+		}
 		
-		System.out.println(algorithmLS(time,data));
+		if(greedy){
+			System.out.println("---WORKING---");
+			System.out.println("Greedy: "+algorithmLSG(time,data));
+		}
 		
+		System.out.println("---END---");
 	}
 }
