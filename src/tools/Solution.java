@@ -13,6 +13,9 @@ public class Solution {
 	private static Data data;
 	
 	private static int time;
+	private static long nanoS = 0;
+	private static long nanoG = 0;
+	private static long nanoR = 0;
 	
 	public static int[] randomPermutation(int size)
 	{
@@ -43,21 +46,19 @@ public class Solution {
 		
 	}
 	
-	private static double algorithmLSR(int time, Data data){
+	private static double algorithmR(int time, Data data){
 		
 		double minCost = Double.MAX_VALUE;
-		
-		long t= System.currentTimeMillis();
-		long end = t+time*1000;
 		try {
-			while(System.currentTimeMillis() < end) {
+			long end = System.nanoTime()+time;
+			 do{
 				int[] dane = randomPermutation(data.getSize());
 				double actualCost = calculateCost(dane, data);
 				if(actualCost<minCost){
 					minCost = actualCost;
 				}
 				Thread.sleep(10);
-			}
+			}while(System.nanoTime() < end);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -95,7 +96,11 @@ public class Solution {
 						}
 					}
 				}
-				tmp = lepsze;
+				if(lepsze != tmp){
+					tmp = lepsze;
+				}else{
+					break;
+				}
 				Thread.sleep(10);
 			}
 		} catch (InterruptedException e) {
@@ -135,7 +140,11 @@ public class Solution {
 						}
 					}
 				}
-				tmp = lepsze;
+				if(tmp != lepsze){
+					tmp = lepsze;
+				}else{
+					break;
+				}
 				Thread.sleep(10);
 			}
 		} catch (InterruptedException e) {
@@ -221,23 +230,72 @@ public class Solution {
 	    }
 	}
 	
+	private static double doSteepest(int time, Data data){
+		long start = System.nanoTime();
+		double minValue = Double.MAX_VALUE;
+		
+		for(int i = 0;i<10;i++){
+			double tmp = algorithmLSS(time, data);
+			if(tmp<minValue){
+				minValue = tmp;
+			}
+		}
+		long elapsedTime = System.nanoTime()-start;
+		nanoS = elapsedTime;
+		return minValue;
+	}
+	
+	private static double doGreedy(int time, Data data){
+		long start = System.nanoTime();
+		double minValue = Double.MAX_VALUE;
+		
+		for(int i = 0;i<10;i++){
+			double tmp = algorithmLSG(time, data);
+			if(tmp<minValue){
+				minValue = tmp;
+			}
+		}
+		long elapsedTime = System.nanoTime()-start;
+		nanoG = elapsedTime;		
+		return minValue;
+	}
+	
+	private static double doRandom(int Time, Data data){
+		long start = System.nanoTime();
+		double minValue = Double.MAX_VALUE;
+		
+		for(int i = 0;i<10;i++){
+			double tmp = algorithmR(time, data);
+			if(tmp<minValue){
+				minValue = tmp;
+			}
+		}
+		long elapsedTime = System.nanoTime()-start;
+		nanoR = elapsedTime;		
+		return minValue;
+	}
+	
 	public static void main(String[] args) {
 	
 		checkParameters(args);
 		
-		if(random){
-			System.out.println("---WORKING---");
-			System.out.println("Random: "+algorithmLSR(time, data));
-		}
-		
 		if(steepest){
 			System.out.println("---WORKING---");
-			System.out.println("Steepest: "+algorithmLSS(time,data));
+			System.out.println("Steepest: "+doSteepest(time,data));
+			System.out.println("Time: "+nanoS+"ns");
 		}
 		
 		if(greedy){
 			System.out.println("---WORKING---");
-			System.out.println("Greedy: "+algorithmLSG(time,data));
+			System.out.println("Greedy: "+doGreedy(time,data));
+			System.out.println("Time: "+nanoG+"ns");
+		}
+		
+		if(random&&nanoG+nanoS>0){
+			int avgTime = (int)(nanoS+nanoG)/2;
+			System.out.println("---WORKING---");
+			System.out.println("Random: "+doRandom(avgTime, data));
+			System.out.println("Time: "+nanoR+"ns");
 		}
 		
 		System.out.println("---END---");
