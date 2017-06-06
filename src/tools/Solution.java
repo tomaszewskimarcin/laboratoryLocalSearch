@@ -1,16 +1,15 @@
 package tools;
 
-import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Solution {
 	
-	private static boolean random = false;
-	private static boolean steepest = false;
-	private static boolean greedy = false;
-	
 	private static Data data;
+	
+	static FileWriter fw;
 	
 	private static int time;
 	private static long nanoS = 0;
@@ -157,79 +156,6 @@ public class Solution {
 		
 	}
 	
-	private static void checkParameters(String[] args){
-		if(args.length>0 && !args[0].equals("")){
-			switch(args[0]){
-			case "-a":
-				random = true;
-				steepest = true;
-				greedy = true;
-				break;
-			case "-r":
-				random = true;
-				break;
-			case "-s":
-				steepest = true;
-				break;
-			case "-g":
-				greedy = true;
-				break;
-			default:
-				System.out.println("Wrong argument 1!\nChoose:\n- '-a' for all algorithms\n- '-r' for random"
-						+ "\n- '-s' for steepest\n- '-g' for greedy");
-				return;
-			}
-		}else{
-			System.out.println("Missing argument 1!\nChoose:\n- '-a' for all algorithms\n- '-r' for random"
-					+ "\n- '-s' for steepest\n- '-g' for greedy");
-			return;
-		}
-		if(args.length>1&&!args[1].equals("")){
-			File f = new File(args[1]);
-			if(f.exists() && !f.isDirectory()) { 
-			    data = new Data(args[1]);
-			}else{
-				System.out.println("Wrong argument 2!\nFile doesn't exist!");
-				random = false;
-				steepest = false;
-				greedy = false;
-				return;
-			}
-		}else{
-			System.out.println("Missing argument 2!\nSpecify path to data file.");
-			random = false;
-			steepest = false;
-			greedy = false;
-			return;
-		}
-		
-		if(args.length>2&&!args[2].equals("")&&isValidSeconds(args[2])){
-			time = Integer.parseInt(args[2]);
-		}else{
-			System.out.println("Missing or wrong argument 3!\nSpecify time limit in seconds.\n"
-					+ "Time limit must be greater than zero");
-			random = false;
-			steepest = false;
-			greedy = false;
-			return;
-		}
-		
-	}
-	
-	private static boolean isValidSeconds( String input ) {
-	    try {
-	        int i = Integer.parseInt( input );
-	        if(i>0){
-	        	return true;
-	        }else{
-	        	return false;
-	        }
-	    }
-	    catch( Exception e ) {
-	        return false;
-	    }
-	}
-	
 	private static double doSteepest(int time, Data data){
 		long start = System.nanoTime();
 		double minValue = Double.MAX_VALUE;
@@ -275,29 +201,67 @@ public class Solution {
 		return minValue;
 	}
 	
-	public static void main(String[] args) {
+	private static void performTests(int time, String path){
+		
+		try {
+			String tmp = "";
+			String name = "";
+			if(path.indexOf('/')>0){
+				name = path.substring(path.lastIndexOf('/')+1, path.length());
+				name = name.substring(0,name.lastIndexOf('.'));
+			}else{
+				name = path.substring(0,path.lastIndexOf('.'));
+			}
+			fw = new FileWriter("output_"+name+".txt");
+			fw.write("LP\tFile\tSteepest\tSteepestTime\tGreedy\tGreedyTime\tRandom\tRandomTime");
+			
+			for(int j = 0;j<10;j++){
+				if(path.indexOf('/')>0){
+					tmp = "\n"+(j+1)+"\t"+path.substring(path.lastIndexOf('/')+1, path.length())+"\t";
+				}else{
+					tmp = "\n"+(j+1)+"\t"+path+"\t";
+				}
+				System.out.println("PATH: "+path);
+				data = new Data(path);
+				System.out.println("---WORKING---");
+				double steepest = doSteepest(time, data);
+				System.out.println("Steepest: "+steepest);
+				System.out.println("Time: "+nanoS+"ns");
+				
+				tmp+=steepest+"\t"+nanoS+"\t";
+				
+				data = new Data(path);
+				System.out.println("---WORKING---");
+				double greedy = doGreedy(time, data);
+				System.out.println("Greedy: "+greedy);
+				System.out.println("Time: "+nanoG+"ns");
+
+				tmp+=greedy+"\t"+nanoG+"\t";
+
+				data = new Data(path);
+				int avgTime = (int)(nanoS+nanoG)/2;
+				System.out.println("---WORKING---");
+				double random = doRandom(avgTime, data);
+				System.out.println("Random: "+random);
+				System.out.println("Time: "+nanoR+"ns");
+
+				tmp+=random+"\t"+nanoR+"\t";
+				
+				fw.write(tmp);
+			}
+			fw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	
-		checkParameters(args);
+	public static void main(String[] args) {
 		
-		if(steepest){
-			System.out.println("---WORKING---");
-			System.out.println("Steepest: "+doSteepest(time,data));
-			System.out.println("Time: "+nanoS+"ns");
-		}
-		
-		if(greedy){
-			System.out.println("---WORKING---");
-			System.out.println("Greedy: "+doGreedy(time,data));
-			System.out.println("Time: "+nanoG+"ns");
-		}
-		
-		if(random&&nanoG+nanoS>0){
-			int avgTime = (int)(nanoS+nanoG)/2;
-			System.out.println("---WORKING---");
-			System.out.println("Random: "+doRandom(avgTime, data));
-			System.out.println("Time: "+nanoR+"ns");
-		}
-		
-		System.out.println("---END---");
+		time = 15;
+		String path = args[0];
+
+		performTests(time, path);
+	    
 	}
 }
