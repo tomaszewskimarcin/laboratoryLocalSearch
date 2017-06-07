@@ -3,6 +3,7 @@ package tools;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Solution {
@@ -14,7 +15,9 @@ public class Solution {
 	private static int time;
 	private static long nanoS = 0;
 	private static long nanoG = 0;
-	private static long nanoR = 0;
+	
+	double stepsS = 0;
+	double stepsG = 0;
 	
 	public static int[] randomPermutation(int size)
 	{
@@ -74,31 +77,41 @@ public class Solution {
 		  return a;
 		}
 	
-	private static double algorithmLSS(int time, Data data){
+	private static Object[] algorithmLSS(int time, Data data){
 		
 		double minCost = Double.MAX_VALUE;
+		
+		int steps = 0;
+		int checked = 0;
 		
 		int[] tmp = randomPermutation(data.getSize());
 		minCost = calculateCost(tmp, data);
 		int[] lepsze = new int[data.getSize()];
 		long t= System.currentTimeMillis();
 		long end = t+time*1000;
+		boolean flag = false;
 		try {
 			while(System.currentTimeMillis() < end) {
+				steps++;
 				for(int i = 0;i<data.getSize();i++){
 					for(int j = 0;j<data.getSize();j++){
+						checked++;
 						int[] tab = swap(tmp,i,j);
 						double calculated = calculateCost(tab, data);
 						if(calculated<minCost){
 							minCost = calculated;
-							lepsze = tab;
+							lepsze = Arrays.copyOf(tab, tab.length);
+							flag = true;
 						}
 					}
 				}
-				if(lepsze != tmp){
-					tmp = lepsze;
-				}else{
+				if(compareArrays(tmp,lepsze)||!flag){
 					break;
+				}
+				if(!compareArrays(tmp, lepsze)&&flag){
+					tmp = Arrays.copyOf(lepsze, lepsze.length);
+					lepsze = new int[data.getSize()];
+					flag = false;
 				}
 				Thread.sleep(10);
 			}
@@ -106,31 +119,39 @@ public class Solution {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		
-		return minCost;
+		Object[] tab = {minCost,steps,checked};
+		
+		return tab;
 		
 	}
 
-	private static double algorithmLSG(int time, Data data){
+	private static Object[] algorithmLSG(int time, Data data){
 		
 		double minCost = Double.MAX_VALUE;
+		
+		int steps = 0;
+		int checked = 0;
 		
 		int[] tmp = randomPermutation(data.getSize());
 		minCost = calculateCost(tmp, data);
 		int[] lepsze = new int[data.getSize()];
-		boolean breakerFlag = false;
 		long t= System.currentTimeMillis();
 		long end = t+time*1000;
+		boolean flag = false;
+		boolean breakerFlag = false;
 		try {
 			while(System.currentTimeMillis() < end) {
+				steps++;
 				for(int i = 0;i<data.getSize();i++){
 					for(int j = 0;j<data.getSize();j++){
+						checked++;
 						int[] tab = swap(tmp,i,j);
 						double calculated = calculateCost(tab, data);
 						if(calculated<minCost){
 							minCost = calculated;
-							lepsze = tab;
+							lepsze = Arrays.copyOf(tab, tab.length);
+							flag = true;
 							breakerFlag = true;
 							break;
 						}
@@ -139,10 +160,13 @@ public class Solution {
 						}
 					}
 				}
-				if(tmp != lepsze){
-					tmp = lepsze;
-				}else{
+				if(compareArrays(tmp,lepsze)||!flag){
 					break;
+				}
+				if(!compareArrays(tmp, lepsze)&&flag){
+					tmp = Arrays.copyOf(lepsze, lepsze.length);
+					lepsze = new int[data.getSize()];
+					flag = false;
 				}
 				Thread.sleep(10);
 			}
@@ -150,44 +174,70 @@ public class Solution {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		
-		return minCost;
+		Object[] tab = {minCost,steps,checked};
+		
+		return tab;
 		
 	}
 	
-	private static double doSteepest(int time, Data data){
+	private static double[] doSteepest(int time, Data data){
 		long start = System.nanoTime();
 		double minValue = Double.MAX_VALUE;
+		int sumSteps = 0;
+		int sumChecked = 0;
+		double avgSteps = 0;
+		double avgChecked = 0;
 		
 		for(int i = 0;i<10;i++){
-			double tmp = algorithmLSS(time, data);
-			if(tmp<minValue){
-				minValue = tmp;
+			Object[] tmp = algorithmLSS(time, data);
+			if((double)tmp[0]<minValue){
+				minValue = (double)tmp[0];
 			}
+			sumSteps += (int)tmp[1];
+			sumChecked += (int)tmp[2];
 		}
+		
+		avgSteps = sumSteps/10;
+		avgChecked = sumChecked/10;
+		
 		long elapsedTime = System.nanoTime()-start;
 		nanoS = elapsedTime;
-		return minValue;
+		
+		double[] tab = {minValue,avgSteps,avgChecked};
+		
+		return tab;
 	}
 	
-	private static double doGreedy(int time, Data data){
+	private static double[] doGreedy(int time, Data data){
 		long start = System.nanoTime();
 		double minValue = Double.MAX_VALUE;
+		int sumSteps = 0;
+		int sumChecked = 0;
+		double avgSteps = 0;
+		double avgChecked = 0;
 		
 		for(int i = 0;i<10;i++){
-			double tmp = algorithmLSG(time, data);
-			if(tmp<minValue){
-				minValue = tmp;
+			Object[] tmp = algorithmLSG(time, data);
+			if((double)tmp[0]<minValue){
+				minValue = (double)tmp[0];
 			}
+			sumSteps += (int)tmp[1];
+			sumChecked += (int)tmp[2];
 		}
+		
+		avgSteps = sumSteps/10;
+		avgChecked = sumChecked/10;
+		
 		long elapsedTime = System.nanoTime()-start;
-		nanoG = elapsedTime;		
-		return minValue;
+		nanoG = elapsedTime;
+		
+		double[] tab = {minValue,avgSteps,avgChecked};
+		
+		return tab;
 	}
 	
 	private static double doRandom(int Time, Data data){
-		long start = System.nanoTime();
 		double minValue = Double.MAX_VALUE;
 		
 		for(int i = 0;i<10;i++){
@@ -195,9 +245,7 @@ public class Solution {
 			if(tmp<minValue){
 				minValue = tmp;
 			}
-		}
-		long elapsedTime = System.nanoTime()-start;
-		nanoR = elapsedTime;		
+		}	
 		return minValue;
 	}
 	
@@ -212,40 +260,30 @@ public class Solution {
 			}else{
 				name = path.substring(0,path.lastIndexOf('.'));
 			}
-			fw = new FileWriter("output_"+name+".txt");
-			fw.write("LP\tFile\tSteepest\tSteepestTime\tGreedy\tGreedyTime\tRandom\tRandomTime");
-			
+			fw = new FileWriter("output_"+name+".csv");
+			fw.write("LP\tFile\tSteepest\tSteepestTime\tSSteps\tSChecked\tGreedy\tGreedyTime\tGSteps\tGChecked\tRandom\t");
+			System.out.println("---Start---");
 			for(int j = 0;j<10;j++){
 				if(path.indexOf('/')>0){
 					tmp = "\n"+(j+1)+"\t"+path.substring(path.lastIndexOf('/')+1, path.length())+"\t";
 				}else{
 					tmp = "\n"+(j+1)+"\t"+path+"\t";
 				}
-				System.out.println("PATH: "+path);
 				data = new Data(path);
-				System.out.println("---WORKING---");
-				double steepest = doSteepest(time, data);
-				System.out.println("Steepest: "+steepest);
-				System.out.println("Time: "+nanoS+"ns");
+				double[] steepest = doSteepest(time, data);
 				
-				tmp+=steepest+"\t"+nanoS+"\t";
+				tmp+=steepest[0]+"\t"+nanoS+"\t"+steepest[1]+"\t"+steepest[2]+"\t";
 				
 				data = new Data(path);
-				System.out.println("---WORKING---");
-				double greedy = doGreedy(time, data);
-				System.out.println("Greedy: "+greedy);
-				System.out.println("Time: "+nanoG+"ns");
+				double greedy[] = doGreedy(time, data);
 
-				tmp+=greedy+"\t"+nanoG+"\t";
+				tmp+=greedy[0]+"\t"+nanoG+"\t"+greedy[1]+"\t"+greedy[2]+"\t";
 
 				data = new Data(path);
 				int avgTime = (int)(nanoS+nanoG)/2;
-				System.out.println("---WORKING---");
 				double random = doRandom(avgTime, data);
-				System.out.println("Random: "+random);
-				System.out.println("Time: "+nanoR+"ns");
 
-				tmp+=random+"\t"+nanoR+"\t";
+				tmp+=random+"\t";
 				
 				fw.write(tmp);
 			}
@@ -254,11 +292,29 @@ public class Solution {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("---END---");
 	}
+	
+	private static boolean compareArrays(int[] a1, int[] a2) {
+        boolean b = true;
+        if (a1 != null && a2 != null){
+          if (a1.length != a2.length)
+              b = false;
+          else
+              for (int i = 0; i < a2.length; i++) {
+                  if (a2[i] != a1[i]) {
+                      b = false;    
+                  }                 
+            }
+        }else{
+          b = false;
+        }
+        return b;
+    }
 	
 	public static void main(String[] args) {
 		
-		time = 15;
+		time = 60;
 		String path = args[0];
 
 		performTests(time, path);
